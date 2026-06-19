@@ -10,17 +10,6 @@ The agent runs an **autonomous log investigation** by chaining SPL searches,
 then returns a structured report. This script is a thin pass-through: all
 investigation logic lives in the agent's server-side system prompt.
 
-
-
-
-
-
-
-
-<img width="2352" height="4860" alt="llm4splunk_diagram" src="https://github.com/user-attachments/assets/2f582a76-1ee3-4331-bb65-bb76e91b4a70" />
-
-
-
 ## How it works
 
 1. Splunk passes any pipeline records to the command.
@@ -38,6 +27,9 @@ The agent replies only in single-line JSON:
 {"action":"search","query":"index=* \"PC45771\" | stats count by index, sourcetype"}
 {"action":"diagnose","severity":"high","summary":"...","text":"..."}
 ```
+
+<img width="2352" height="5028" alt="llm4splunk_diagram en" src="https://github.com/user-attachments/assets/8d100d1d-e2a8-4999-86d8-8dfe8fb6ce21" />
+
 
 ## Installation
 
@@ -147,6 +139,11 @@ L'agent répond uniquement en JSON sur une seule ligne :
 {"action":"search","query":"index=* \"PC45771\" | stats count by index, sourcetype"}
 {"action":"diagnose","severity":"high","summary":"...","text":"..."}
 ```
+
+
+<img width="2352" height="4860" alt="llm4splunk_diagram" src="https://github.com/user-attachments/assets/2f582a76-1ee3-4331-bb65-bb76e91b4a70" />![Uploading llm4splunk_diagram.en.png…]()
+
+
 
 ## Installation
 
