@@ -95,8 +95,8 @@ index=netops "SW_MATM" | stats count by host, mac_address
 ## Agent prompt
 
 The investigation methodology is defined in the agent's system prompt, not in
-this code. See [`agent_system_prompt.en.md`](agent_system_prompt.en.md)
-([🇫🇷 FR](agent_system_prompt.fr.md)).
+this code. See [`prompt.en.md`](prompt.en.md)
+([🇫🇷 FR](prompt.fr.md)).
 
 ## Notes
 
@@ -209,8 +209,8 @@ index=netops "SW_MATM" | stats count by host, mac_address
 ## Prompt de l'agent
 
 La méthode d'investigation est définie dans le system prompt de l'agent, pas
-dans ce code. Voir [`agent_system_prompt.fr.md`](agent_system_prompt.fr.md)
-([🇬🇧 EN](agent_system_prompt.en.md)).
+dans ce code. Voir [`prompt.fr.md`](prompt.fr.md)
+([🇬🇧 EN](prompt.en.md)).
 
 ## Notes
 
