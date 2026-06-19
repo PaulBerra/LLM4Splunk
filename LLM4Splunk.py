@@ -10,20 +10,20 @@ script only executes the queries the agent requests and relays the results.
 
 Usage (autonomous mode):
     | makeresults
-    | LLM4Splunk incident_type="last user logged on PC di41595" max_steps=10
+    | llm4splunk query="last user logged on PC di41595" max_steps=10
     | table ai_rank, ai_severity, ai_summary, ai_diagnosis
 
 Usage (pipeline mode):
     index=netops "SW_MATM" | stats count by host, mac_address
-    | LLM4Splunk incident_type="root cause of mac flapping"
+    | llm4splunk query="root cause of mac flapping"
     | table ai_rank, ai_severity, ai_summary, ai_diagnosis
 
 Environment variables:
-    LLM4Splunk_API_URL    AI agent completions endpoint (required)
-    LLM4Splunk_API_KEY    Bearer token for the AI agent (required)
-    LLM4Splunk_MODEL      Default model name (optional)
+    LLM4SPLUNK_API_URL    AI agent completions endpoint (required)
+    LLM4SPLUNK_API_KEY    Bearer token for the AI agent (required)
+    LLM4SPLUNK_MODEL      Default model name (optional)
 
-Runtime logs: tail -f $SPLUNK_HOME/log/splunk/LLM4Splunk.log
+Runtime logs: tail -f $SPLUNK_HOME/etc/apps/LLM4Splunk/LLM4Splunk.log
 """
 
 import sys
@@ -45,7 +45,13 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-_LOG_FILE = os.path.join(os.environ.get("SPLUNK_HOME"), "log", "splunk", "LLM4Splunk.log")
+_APP_DIR  = os.path.join(os.environ.get("SPLUNK_HOME", "/tmp"),
+                         "etc", "apps", "LLM4Splunk")
+try:
+    os.makedirs(_APP_DIR, exist_ok=True)
+    _LOG_FILE = os.path.join(_APP_DIR, "LLM4Splunk.log")
+except OSError:
+    _LOG_FILE = "/tmp/LLM4Splunk.log"
 log = logging.getLogger("LLM4Splunk")
 log.setLevel(logging.DEBUG)
 log.propagate = False
@@ -60,11 +66,11 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 # ---------------------------------------------------------------------------
-# Config
+# Config (secrets and endpoint come from the environment)
 # ---------------------------------------------------------------------------
-API_URL       = os.environ.get("LLM4Splunk_API_URL", "")
-API_KEY       = os.environ.get("LLM4Splunk_API_KEY", "")
-DEFAULT_MODEL = os.environ.get("LLM4Splunk_MODEL", "mistral-3")
+API_URL       = os.environ.get("LLM4SPLUNK_API_URL", "")
+API_KEY       = os.environ.get("LLM4SPLUNK_API_KEY", "")
+DEFAULT_MODEL = os.environ.get("LLM4SPLUNK_MODEL", "ia-splunk")
 
 API_TIMEOUT   = 180
 LLM_MAXTOK    = 4096
@@ -72,7 +78,7 @@ SPL_WINDOW    = "-24h"
 SPL_MAXROWS   = 30
 DATASET_MAX   = 8000
 CONTEXT_MAX   = 7000
-MAX_EMPTY_STREAK = int(os.environ.get("MAX_EMPTY_STREAK", 4))
+
 # Minimal technical contract: JSON protocol only. The expert investigation
 # logic is provided by the agent's own server-side system prompt.
 SYSTEM_CONTRACT = (
@@ -91,7 +97,7 @@ SYSTEM_CONTRACT = (
 
 
 # ---------------------------------------------------------------------------
-# LLM response parsing
+# LLM response parsing (handles clean JSON, escaped newlines, malformed JSON)
 # ---------------------------------------------------------------------------
 def _fix_json_newlines(s):
     out, in_str, esc = [], False, False
@@ -149,7 +155,7 @@ def _parse_llm(raw):
     log.warning("Unparsable JSON, falling back to manual extraction.")
     d = {}
 
-    # Common malformation: {"action":"search","\nindex=..."}
+    # Common malformation: {"action":"search","\nindex=..."} (query under wrong key)
     m_bug = re.search(r'"action"\s*:\s*"search",\s*"([^"]*(?:index=)[^"]*)"', clean, re.DOTALL)
     if m_bug:
         d["action"] = "search"
@@ -199,7 +205,8 @@ def _clean_report(t):
 # ---------------------------------------------------------------------------
 @Configuration()
 class AiInvestigateCommand(StreamingCommand):
-    incident_type = Option(require=True)
+
+    request       = Option(require=True, name="query")
     entity_field  = Option(require=False, default="")
     max_steps     = Option(require=False, default="10")
     model_name    = Option(require=False, default=DEFAULT_MODEL)
@@ -332,16 +339,16 @@ class AiInvestigateCommand(StreamingCommand):
     def stream(self, records):
         log.info("=" * 60)
         log.info("START | incident=%r | max_steps=%s | model=%s",
-                 self.incident_type, self.max_steps, self.model_name)
+                 self.request, self.max_steps, self.model_name)
         log.info("=" * 60)
 
         if not API_URL or not API_KEY:
-            log.error("LLM4Splunk_API_URL / LLM4Splunk_API_KEY not set in environment.")
+            log.error("LLM4SPLUNK_API_URL / LLM4SPLUNK_API_KEY not set in environment.")
             yield {
                 "ai_rank":      "0 - AI ANALYSIS",
                 "ai_severity":  "info",
                 "ai_summary":   "Configuration error",
-                "ai_diagnosis": "LLM4Splunk_API_URL and LLM4Splunk_API_KEY environment variables must be set.",
+                "ai_diagnosis": "LLM4SPLUNK_API_URL and LLM4SPLUNK_API_KEY environment variables must be set.",
                 "host":         "[0 records]",
             }
             return
@@ -369,7 +376,7 @@ class AiInvestigateCommand(StreamingCommand):
             if len(dataset_block) > DATASET_MAX:
                 dataset_block = dataset_block[:DATASET_MAX] + "\n...[truncated]"
 
-        first_msg = "Engineer request: " + self.incident_type
+        first_msg = "Engineer request: " + self.request
         if dataset_block:
             first_msg += "\n\nPre-aggregated Splunk dataset:\n" + dataset_block
         else:
@@ -383,7 +390,6 @@ class AiInvestigateCommand(StreamingCommand):
         final_diag    = None
         seen_queries  = set()
         empty_streak  = 0
-        
 
         for step in range(1, limit + 1):
             is_last = (step == limit)
@@ -433,7 +439,7 @@ class AiInvestigateCommand(StreamingCommand):
 
                 # Force a conclusion if the agent keeps hitting nothing
                 empty_streak = empty_streak + 1 if (is_err or is_empty) else 0
-                if empty_streak >= MAX_EMPTY_STREAK and not is_last:
+                if empty_streak >= 4 and not is_last:
                     log.warning("4 unproductive searches in a row, forcing diagnose.")
                     messages.append({"role": "assistant",
                                      "content": json.dumps(d, ensure_ascii=False)})
