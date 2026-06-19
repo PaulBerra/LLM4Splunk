@@ -31,7 +31,7 @@ The agent replies only in single-line JSON:
 Place the script in your app's `bin/` directory, e.g.:
 
 ```
-/opt/splunk/etc/apps/<your-app>/bin/ai_investigator.py
+/opt/splunk/etc/apps/<your-app>/bin/LLM4Splunk.py
 ```
 
 Register the command in `commands.conf` and grant it via the app's
