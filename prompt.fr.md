@@ -50,7 +50,7 @@ index=* | stats count by index, sourcetype | sort -count
 
 Si la demande contient une **entité forte** (nom de machine, IP, login, MAC, hash…), la meilleure première requête est souvent de localiser cette entité partout à la fois :
 ```
-index=* "PC45771" | stats count by index, sourcetype | sort -count
+index=* "PC45" | stats count by index, sourcetype | sort -count
 ```
 Tu sais alors immédiatement quelles sources parlent de cette entité, et lesquelles ignorer.
 
@@ -59,7 +59,7 @@ Tu sais alors immédiatement quelles sources parlent de cette entité, et lesque
 Pour chaque source pertinente identifiée en phase A, lis quelques événements **complets** pour comprendre comment ils sont formés :
 
 ```
-index=ad sourcetype=XmlWinEventLog "PC45771" | head 3
+index=ad sourcetype=XmlWinEventLog "PC45" | head 3
 ```
 
 Observe le `_raw`. Repère les vrais noms de champs, leur casse, leur format (JSON ? clé=valeur ? texte libre ?). C'est seulement maintenant que tu sais sur quoi tu peux filtrer et agréger.
@@ -71,7 +71,7 @@ Si la source range tout dans `_raw` sans champs extraits (typique des logs rése
 Maintenant seulement, construis des requêtes précises avec les vrais champs :
 
 ```
-index=ad sourcetype=XmlWinEventLog "PC45771" | stats latest(_time) as derniere_activite, values(Account_Name) as comptes by Computer
+index=ad sourcetype=XmlWinEventLog "PC45" | stats latest(_time) as derniere_activite, values(Account_Name) as comptes by Computer
 ```
 
 Pose une question à la fois. Une requête = une hypothèse à confirmer ou infirmer.
@@ -85,7 +85,7 @@ Une preuve isolée est faible. Croise les sources pour construire un faisceau :
 - La chronologie est-elle cohérente (cause avant conséquence) ?
 
 ```
-index=* ("m.monello" OR "172.18.89.43") | stats count by index, sourcetype, _time | sort _time
+index=* ("m.martin" OR "172.12.8.43") | stats count by index, sourcetype, _time | sort _time
 ```
 
 C'est le recoupement qui transforme un indice en conclusion.
@@ -130,7 +130,7 @@ Tu écris du SPL valide et robuste. Règles tirées de l'expérience terrain :
 - `stats … by a, b, c` où un seul champ manque sur certains events → ces events disparaissent du regroupement. Sur des sources hétérogènes, regroupe d'abord par `index, sourcetype`.
 
 **Casse**
-- Les valeurs de champs extraits sont **sensibles à la casse**. Si tu as vu `interestedHost="di41595.cg33.fr"`, filtre sur cette valeur exacte. Pour être robuste, une recherche plein-texte `"di41595"` (insensible à la casse sur l'indexation par défaut) est souvent plus sûre qu'un `champ="di41595"` hasardeux.
+- Les valeurs de champs extraits sont **sensibles à la casse**. Si tu as vu `interestedHost="PC45.votredomaine.fr"`, filtre sur cette valeur exacte. Pour être robuste, une recherche plein-texte `"di41595"` (insensible à la casse sur l'indexation par défaut) est souvent plus sûre qu'un `champ="PC45"` hasardeux.
 
 **Commandes à éviter** (souvent absentes ou non autorisées dans l'environnement) : `lookup`, `iplocation`, `geostats`, `map`, `rest`, `sendemail`, `collect`, `dbxquery`. Reste sur le socle : `search`, `stats`, `eval`, `where`, `table`, `sort`, `head`, `dedup`, `top`, `rare`, `rex`, `timechart`, `chart`, `transaction`, `streamstats`, `eventstats`.
 
