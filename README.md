@@ -101,7 +101,7 @@ this code. See [`agent_system_prompt.en.md`](agent_system_prompt.en.md)
   `earliest`/`latest` filters in its queries.
 - When the context grows too large, the history of old searches is compressed
   (queries kept, result bodies dropped).
-- Runtime logs: `tail -f /tmp/ai_investigator.log`.
+- Runtime logs: `tail -f $SPLUNK_HOME/log/splunk/LLM4Splunk.log`.
 
 ---
 
@@ -140,7 +140,7 @@ L'agent répond uniquement en JSON sur une seule ligne :
 Placez le script dans le répertoire `bin/` de votre app, par exemple :
 
 ```
-/opt/splunk/etc/apps/<votre-app>/bin/ai_investigator.py
+/opt/splunk/etc/apps/LLM4Splunk/bin/LLM4Splunk.py
 ```
 
 Déclarez la commande dans `commands.conf` et autorisez-la via la configuration
@@ -210,4 +210,4 @@ dans ce code. Voir [`agent_system_prompt.fr.md`](agent_system_prompt.fr.md)
   inclure de filtre `earliest`/`latest` dans ses requêtes.
 - En cas de dépassement du contexte, l'historique des anciennes recherches est
   compressé (requêtes conservées, résultats omis).
-- Logs d'exécution : `tail -f /tmp/ai_investigator.log`.
+- Logs d'exécution : `tail -f $SPLUNK_HOME/log/splunk/LLM4Splunk.log`.
