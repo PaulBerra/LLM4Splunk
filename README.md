@@ -1,6 +1,11 @@
 # LLM4Splunk
 A custom Splunk App that bridges Splunk and a remote AI agent.
 
+
+<img width="2352" height="4860" alt="llm4splunk_diagram" src="https://github.com/user-attachments/assets/2f582a76-1ee3-4331-bb65-bb76e91b4a70" />
+
+
+
 🇬🇧 English · [🇫🇷 Français](#-français)
 
 A custom Splunk `StreamingCommand` that bridges Splunk and a remote AI agent.
