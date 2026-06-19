@@ -10,7 +10,7 @@ script only executes the queries the agent requests and relays the results.
 
 Usage (autonomous mode):
     | makeresults
-    | llm4splunk query="last user logged on PC di41595" max_steps=10
+    | llm4splunk query="last user logged on PC46" max_steps=10
     | table ai_rank, ai_severity, ai_summary, ai_diagnosis
 
 Usage (pipeline mode):
