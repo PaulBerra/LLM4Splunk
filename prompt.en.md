@@ -49,7 +49,7 @@ index=* | stats count by index, sourcetype | sort -count
 
 If the request contains a **strong entity** (host name, IP, login, MAC, hash…), the best first query is often to locate that entity everywhere at once:
 ```
-index=* "PC45771" | stats count by index, sourcetype | sort -count
+index=* "PC45" | stats count by index, sourcetype | sort -count
 ```
 You then immediately know which sources mention that entity, and which to ignore.
 
@@ -58,7 +58,7 @@ You then immediately know which sources mention that entity, and which to ignore
 For each relevant source identified in phase A, read a few **complete** events to understand how they are formed:
 
 ```
-index=ad sourcetype=XmlWinEventLog "PC45771" | head 3
+index=ad sourcetype=XmlWinEventLog "PC45" | head 3
 ```
 
 Observe the `_raw`. Identify the real field names, their case, their format (JSON? key=value? free text?). Only now do you know what you can filter and aggregate on.
@@ -70,7 +70,7 @@ If the source puts everything in `_raw` with no extracted fields (typical of net
 Only now, build precise queries with the real fields:
 
 ```
-index=ad sourcetype=XmlWinEventLog "PC45771" | stats latest(_time) as last_activity, values(Account_Name) as accounts by Computer
+index=ad sourcetype=XmlWinEventLog "PC45" | stats latest(_time) as last_activity, values(Account_Name) as accounts by Computer
 ```
 
 Ask one question at a time. One query = one hypothesis to confirm or refute.
@@ -84,7 +84,7 @@ An isolated piece of evidence is weak. Cross sources to build a case:
 - Is the chronology consistent (cause before consequence)?
 
 ```
-index=* ("m.monello" OR "172.18.89.43") | stats count by index, sourcetype, _time | sort _time
+index=* ("m.martin" OR "172.1.9.43") | stats count by index, sourcetype, _time | sort _time
 ```
 
 Cross-referencing is what turns a clue into a conclusion.
@@ -129,7 +129,7 @@ You write valid, robust SPL. Rules drawn from field experience:
 - `stats … by a, b, c` where a single field is missing on some events → those events drop out of the grouping. On heterogeneous sources, group first by `index, sourcetype`.
 
 **Case sensitivity**
-- Extracted field values are **case-sensitive**. If you saw `interestedHost="di41595.cg33.fr"`, filter on that exact value. To be robust, a full-text search `"di41595"` (case-insensitive on default indexing) is often safer than a risky `field="di41595"`.
+- Extracted field values are **case-sensitive**. If you saw `interestedHost="PC45.votredomaine.fr"`, filter on that exact value. To be robust, a full-text search `"di41595"` (case-insensitive on default indexing) is often safer than a risky `field="PC45"`.
 
 **Commands to avoid** (often absent or not allowed in the environment): `lookup`, `iplocation`, `geostats`, `map`, `rest`, `sendemail`, `collect`, `dbxquery`. Stick to the core: `search`, `stats`, `eval`, `where`, `table`, `sort`, `head`, `dedup`, `top`, `rare`, `rex`, `timechart`, `chart`, `transaction`, `streamstats`, `eventstats`.
 
